@@ -26,7 +26,25 @@ export function useWordList(): UseWordListResult {
   }
 
   const isFirstChapter = !isReviewMode && currentDictInfo.id === 'cet4' && currentChapter === 0
-  const { data: wordList, error, isLoading } = useSWR(currentDictInfo.url, wordListFetcher)
+  
+  // Check if this is a custom dictionary
+  const isCustomDict = currentDictInfo.id.startsWith('custom-')
+  
+  // For custom dictionaries, get data from localStorage instead of fetching
+  const customWordList = useMemo(() => {
+    if (isCustomDict) {
+      const customDicts = JSON.parse(localStorage.getItem('custom-dictionaries') || '[]')
+      const customDict = customDicts.find((dict: any) => dict.id === currentDictInfo.id)
+      return customDict?.content || []
+    }
+    return null
+  }, [isCustomDict, currentDictInfo.id])
+  
+  // Only use SWR for non-custom dictionaries
+  const { data: wordList, error, isLoading } = useSWR(
+    isCustomDict ? null : currentDictInfo.url, 
+    wordListFetcher
+  )
 
   const words: WordWithIndex[] = useMemo(() => {
     let newWords: Word[]
@@ -34,6 +52,9 @@ export function useWordList(): UseWordListResult {
       newWords = firstChapter
     } else if (isReviewMode) {
       newWords = reviewRecord?.words ?? []
+    } else if (isCustomDict && customWordList) {
+      // For custom dictionaries, use the content from localStorage
+      newWords = customWordList.slice(currentChapter * CHAPTER_LENGTH, (currentChapter + 1) * CHAPTER_LENGTH)
     } else if (wordList) {
       newWords = wordList.slice(currentChapter * CHAPTER_LENGTH, (currentChapter + 1) * CHAPTER_LENGTH)
     } else {
@@ -56,9 +77,13 @@ export function useWordList(): UseWordListResult {
         trans,
       }
     })
-  }, [isFirstChapter, isReviewMode, wordList, reviewRecord?.words, currentChapter])
+  }, [isFirstChapter, isReviewMode, isCustomDict, customWordList, wordList, reviewRecord?.words, currentChapter])
 
-  return { words, isLoading, error }
+  return { 
+    words, 
+    isLoading: isCustomDict ? false : isLoading, 
+    error: isCustomDict ? undefined : error 
+  }
 }
 
 const firstChapter = [

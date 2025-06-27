@@ -4026,12 +4026,14 @@ const germanExam: DictionaryResource[] = [
   },
 ]
 
-
 /**
  * Built-in dictionaries in an array.
  * Why arrays? Because it keeps the order across browsers.
  */
+const customDictionaries: DictionaryResource[] = JSON.parse(localStorage.getItem('custom-dictionaries') || '[]')
+
 export const dictionaryResources: DictionaryResource[] = [
+  ...customDictionaries,
   ...chinaExam,
   ...internationalExam,
   ...childrenEnglish,

@@ -37,7 +37,7 @@
     "html-to-image": "^1.11.11",
     "immer": "^9.0.21",
     "jotai": "^2.0.3",
-    "lucide-react": "^0.294.0",
+    "lucide-react": "^0.524.0",
     "mixpanel-browser": "^2.45.0",
     "pako": "^2.1.0",
     "react": "^18.2.0",
