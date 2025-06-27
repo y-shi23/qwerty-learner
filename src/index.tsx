@@ -5,11 +5,11 @@ import { FriendLinks } from './pages/FriendLinks'
 import MobilePage from './pages/Mobile'
 import TypingPage from './pages/Typing'
 import { isOpenDarkModeAtom } from '@/store'
+import BackgroundImage from '@/components/BackgroundImage'
 import { Analytics } from '@vercel/analytics/react'
 import 'animate.css'
 import { useAtomValue } from 'jotai'
 import mixpanel from 'mixpanel-browser'
-import process from 'process'
 import React, { Suspense, lazy, useEffect, useState } from 'react'
 import 'react-app-polyfill/stable'
 import { createRoot } from 'react-dom/client'
@@ -17,8 +17,9 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 const AnalysisPage = lazy(() => import('./pages/Analysis'))
 const GalleryPage = lazy(() => import('./pages/Gallery-N'))
+const REACT_APP_DEPLOY_ENV = import.meta.env.VITE_DEPLOY_ENV || import.meta.env.REACT_APP_DEPLOY_ENV
 
-if (process.env.NODE_ENV === 'production') {
+if (import.meta.env.PROD) {
   // for prod
   mixpanel.init('bdc492847e9340eeebd53cc35f321691')
 } else {
@@ -49,6 +50,7 @@ function Root() {
 
   return (
     <React.StrictMode>
+      <BackgroundImage />
       <BrowserRouter basename={REACT_APP_DEPLOY_ENV === 'pages' ? '/qwerty-learner' : ''}>
         <Suspense fallback={<Loading />}>
           <Routes>

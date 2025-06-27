@@ -16,3 +16,11 @@ export const defaultFontSizeConfig = {
   foreignFont: 48,
   translateFont: 18,
 }
+
+export const defaultBackgroundConfig = {
+  imageUrl: '',
+  cachedImageData: '',
+  brightness: 100,
+  blur: 0,
+  frostedGlass: false,
+}

@@ -1,6 +1,6 @@
 import atomForConfig from './atomForConfig'
 import { reviewInfoAtom } from './reviewInfoAtom'
-import { DISMISS_START_CARD_DATE_KEY, defaultFontSizeConfig } from '@/constants'
+import { DISMISS_START_CARD_DATE_KEY, defaultFontSizeConfig, defaultBackgroundConfig } from '@/constants'
 import { idDictionaryMap } from '@/resources/dictionary'
 import { correctSoundResources, keySoundResources, wrongSoundResources } from '@/resources/soundResource'
 import type {
@@ -61,6 +61,8 @@ export const pronunciationConfigAtom = atomForConfig('pronunciation', {
 })
 
 export const fontSizeConfigAtom = atomForConfig('fontsize', defaultFontSizeConfig)
+
+export const backgroundConfigAtom = atomForConfig('backgroundConfig', defaultBackgroundConfig)
 
 export const pronunciationIsOpenAtom = atom((get) => get(pronunciationConfigAtom).isOpen)
 
