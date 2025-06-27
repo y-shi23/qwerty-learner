@@ -23,7 +23,18 @@ export async function exportDatabase(callback: (exportProgress: ExportProgress) 
   })
   const [wordCount, chapterCount] = await Promise.all([db.wordRecords.count(), db.chapterRecords.count()])
 
-  const json = await blob.text()
+  // 获取自定义词典数据
+  const customDictionaries = JSON.parse(localStorage.getItem('custom-dictionaries') || '[]')
+
+  // 将数据库数据和自定义词典数据合并
+  const dbJson = await blob.text()
+  const dbData = JSON.parse(dbJson)
+  const exportData = {
+    ...dbData,
+    customDictionaries
+  }
+
+  const json = JSON.stringify(exportData)
   const compressed = pako.gzip(json)
   const compressedBlob = new Blob([compressed])
   const currentDate = getCurrentDate()
@@ -45,7 +56,18 @@ export async function importDatabase(onStart: () => void, callback: (importProgr
 
     const compressed = await file.arrayBuffer()
     const json = pako.ungzip(compressed, { to: 'string' })
-    const blob = new Blob([json])
+    const importData = JSON.parse(json)
+
+    // 处理自定义词典数据
+    if (importData.customDictionaries) {
+      localStorage.setItem('custom-dictionaries', JSON.stringify(importData.customDictionaries))
+      // 从导入数据中移除自定义词典，避免影响数据库导入
+      delete importData.customDictionaries
+    }
+
+    // 重新构建数据库导入的blob
+    const dbJson = JSON.stringify(importData)
+    const blob = new Blob([dbJson])
 
     await db.import(blob, {
       acceptVersionDiff: true,

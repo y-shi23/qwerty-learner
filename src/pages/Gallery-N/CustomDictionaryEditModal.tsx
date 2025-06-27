@@ -13,19 +13,32 @@ export function CustomDictionaryEditModal({ dictionary, onClose }: Props) {
   const [language, setLanguage] = useState<LanguageCategoryType>(dictionary.languageCategory as LanguageCategoryType)
   const [words, setWords] = useState<Partial<Word>[]>([])
   const [dictName, setDictName] = useState(dictionary.name)
+  const [dictDescription, setDictDescription] = useState(dictionary.description || '')
   const [showSuccessAlert, setShowSuccessAlert] = useState(false)
 
   useEffect(() => {
     // 从 localStorage 获取自定义词典的完整数据
     const customDicts = JSON.parse(localStorage.getItem('custom-dictionaries') || '[]')
     const currentDict = customDicts.find((dict: any) => dict.id === dictionary.id)
-    if (currentDict && currentDict.content) {
-      setWords(currentDict.content)
+    if (currentDict) {
+      if (currentDict.content) {
+        setWords(currentDict.content)
+      }
+      if (currentDict.description) {
+        setDictDescription(currentDict.description)
+      }
     }
   }, [dictionary.id])
 
   const handleAddWord = () => {
     setWords([...words, { name: '', trans: [''] }])
+    // 延迟滚动到最后一个单词，确保DOM已更新
+    setTimeout(() => {
+      const wordListContainer = document.querySelector('.word-list-container')
+      if (wordListContainer) {
+        wordListContainer.scrollTop = wordListContainer.scrollHeight
+      }
+    }, 100)
   }
 
   const handleRemoveWord = (index: number) => {
@@ -49,6 +62,7 @@ export function CustomDictionaryEditModal({ dictionary, onClose }: Props) {
         return {
           ...dict,
           name: dictName,
+          description: dictDescription,
           language,
           languageCategory: language,
           length: words.length,
@@ -83,6 +97,16 @@ export function CustomDictionaryEditModal({ dictionary, onClose }: Props) {
             />
           </div>
           <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700">词典描述</label>
+            <input
+              type="text"
+              value={dictDescription}
+              onChange={(e) => setDictDescription(e.target.value)}
+              placeholder="请输入词典描述"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            />
+          </div>
+          <div className="mt-4">
             <label className="block text-sm font-medium text-gray-700">词典类型</label>
             <select
               value={language}
@@ -97,7 +121,7 @@ export function CustomDictionaryEditModal({ dictionary, onClose }: Props) {
           {words.length > 0 && (
             <div className="mt-4">
               <div
-                className="overflow-y-auto rounded-md border border-gray-300 p-2"
+                className="word-list-container overflow-y-auto rounded-md border border-gray-300 p-2"
                 style={{ maxHeight: '12rem', height: words.length > 3 ? '12rem' : 'auto' }}
               >
                 {words.map((word, index) => (
@@ -147,9 +171,9 @@ export function CustomDictionaryEditModal({ dictionary, onClose }: Props) {
       </div>
       <SuccessAlert
         show={showSuccessAlert}
+        setShow={setShowSuccessAlert}
         title="保存成功"
         message="词典已更新，页面即将刷新以查看更改。"
-        onClose={() => setShowSuccessAlert(false)}
         autoClose={true}
         autoCloseDelay={1500}
       />

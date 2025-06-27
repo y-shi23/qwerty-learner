@@ -11,6 +11,7 @@ export function CustomDictionaryButton() {
   const [language, setLanguage] = useState<LanguageCategoryType>('en')
   const [words, setWords] = useState<Partial<Word>[]>([])
   const [dictName, setDictName] = useState('')
+  const [dictDescription, setDictDescription] = useState('')
   const [showSuccessAlert, setShowSuccessAlert] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -52,6 +53,13 @@ export function CustomDictionaryButton() {
 
   const handleAddWord = () => {
     setWords([...words, { name: '', trans: [''] }])
+    // 延迟滚动到最后一个单词，确保DOM已更新
+    setTimeout(() => {
+      const wordListContainer = document.querySelector('.word-list-container')
+      if (wordListContainer) {
+        wordListContainer.scrollTop = wordListContainer.scrollHeight
+      }
+    }, 100)
   }
 
   const handleRemoveWord = (index: number) => {
@@ -72,7 +80,7 @@ export function CustomDictionaryButton() {
     const newDict = {
       id: `custom-${language}-${Date.now()}`,
       name: dictName || `自定义词典 - ${language}`,
-      description: '用户自定义词典',
+      description: dictDescription || '用户自定义词典',
       category: '自定义',
       tags: ['自定义'],
       language,
@@ -87,6 +95,10 @@ export function CustomDictionaryButton() {
     setShowSuccessAlert(true)
     dictionaries.push(newDict as any)
     setIsOpen(false)
+    // 延迟刷新页面，让用户看到成功消息
+    setTimeout(() => {
+      window.location.reload()
+    }, 1500)
   }
 
   return (
@@ -110,6 +122,16 @@ export function CustomDictionaryButton() {
                   value={dictName}
                   onChange={(e) => setDictName(e.target.value)}
                   placeholder="请输入词典名称"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                />
+              </div>
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700">词典描述</label>
+                <input
+                  type="text"
+                  value={dictDescription}
+                  onChange={(e) => setDictDescription(e.target.value)}
+                  placeholder="请输入词典描述"
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 />
               </div>
@@ -139,9 +161,9 @@ export function CustomDictionaryButton() {
               {words.length > 0 && (
                 <div className="mt-4">
                   <div
-                    className="overflow-y-auto rounded-md border border-gray-300 p-2"
-                    style={{ maxHeight: '12rem', height: words.length > 3 ? '12rem' : 'auto' }}
-                  >
+                  className="word-list-container overflow-y-auto rounded-md border border-gray-300 p-2"
+                  style={{ maxHeight: '12rem', height: words.length > 3 ? '12rem' : 'auto' }}
+                >
                     {words.map((word, index) => (
                       <div key={index} className="grid grid-cols-[1fr_1fr_auto] items-center gap-4 py-1">
                         <input
@@ -192,7 +214,7 @@ export function CustomDictionaryButton() {
       <SuccessAlert
         show={showSuccessAlert}
         setShow={setShowSuccessAlert}
-        message="自定义词典已保存，请刷新页面查看。"
+        message="自定义词典已保存，页面即将刷新以查看更改。"
       />
     </div>
   )
