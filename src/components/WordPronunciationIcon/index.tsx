@@ -9,17 +9,7 @@ export const WordPronunciationIcon = React.forwardRef<
   { word: Word; lang: string; className?: string; iconClassName?: string }
 >(({ word, lang, className, iconClassName }, ref) => {
   const currentWord = () => {
-    if (lang === 'hapin') {
-      if (/[\u0400-\u04FF]/.test(word.notation || '')) {
-        // 哈萨克语西里尔文字
-        return word.notation || ''
-      } else {
-        // 哈萨克语老文字
-        return word.trans[2]
-      }
-    } else {
       return word.name
-    }
   }
   const { play, stop, isPlaying } = usePronunciationSound(currentWord())
 

@@ -434,39 +434,6 @@ const chinaExam: DictionaryResource[] = [
   },
 
   {
-    id: 'adult self-study examination',
-    name: '专升本词汇',
-    description: '专升本词汇',
-    category: '中国考试',
-    tags: ['其他'],
-    url: '/dicts/adult-self-study-examination.json',
-    length: 3692,
-    language: 'en',
-    languageCategory: 'en',
-  },
-  {
-    id: 'zhuan-cha-ben-ying-yu',
-    name: '专插本英语词汇',
-    description: '专插本英语词汇',
-    category: '中国考试',
-    tags: ['其他'],
-    url: '/dicts/zhuan-cha-ben.json',
-    length: 3217,
-    language: 'en',
-    languageCategory: 'en',
-  },
-  {
-    id: 'zhuan-sheng-ben-xue-shi',
-    name: '专升本学士学位的英语',
-    description: '专升本学士学位的英语',
-    category: '中国考试',
-    tags: ['其他'],
-    url: '/dicts/xueshiyingyu.json',
-    length: 897,
-    language: 'en',
-    languageCategory: 'en',
-  },
-  {
     id: 'Oxford5000',
     name: '牛津5000词',
     description: '牛津5000词',
@@ -4059,46 +4026,6 @@ const germanExam: DictionaryResource[] = [
   },
 ]
 
-// 哈萨克语哈拼词典
-const kazakhHapinDicts: DictionaryResource[] = [
-  {
-    id: 'kazakh_basic_3000_arabic_hapin',
-    name: '基础3000词(老文字版)',
-    description: '哈萨克语基础3000词(哈拼老文字版)',
-    category: '哈萨克语',
-    tags: ['老文字', '哈拼'],
-    url: '/dicts/kazakh_basic_3000_arabic_hapin.json',
-    length: 3002,
-    language: 'hapin',
-    languageCategory: 'kk',
-  },
-  {
-    id: 'kazakh_basic_3000_cyrillic_hapin',
-    name: '基础3000词(西里尔字母版)',
-    description: '哈萨克语基础3000词(哈拼西里尔字母版)',
-    category: '哈萨克语',
-    tags: ['西里尔字母', '哈拼'],
-    url: '/dicts/kazakh_basic_3000_cyrillic_hapin.json',
-    length: 3002,
-    language: 'hapin',
-    languageCategory: 'kk',
-  },
-]
-
-//印尼语高频词汇
-const indonesianDicts: DictionaryResource[] = [
-  {
-    id: 'indonesian_highFrequency_3043',
-    name: '印尼语高频词汇',
-    description: '印尼语常用单词及中文解释',
-    category: '印尼语',
-    tags: ['基础'],
-    url: '/dicts/Indonesian.json',
-    length: 3037,
-    language: 'id',
-    languageCategory: 'id',
-  },
-]
 
 /**
  * Built-in dictionaries in an array.
@@ -4111,8 +4038,6 @@ export const dictionaryResources: DictionaryResource[] = [
   ...programming,
   ...japaneseExam,
   ...germanExam,
-  ...kazakhHapinDicts,
-  ...indonesianDicts,
 
   // {
   //   id: 'zhtest',
