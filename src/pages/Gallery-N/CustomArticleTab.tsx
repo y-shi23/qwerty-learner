@@ -117,17 +117,21 @@ export function CustomArticleTab({ onSave, onCancel }: CustomArticleTabProps) {
   }
 
   const handleSave = () => {
+    // 计算文章段落数量作为章节数
+    const paragraphs = articleContent.split('\n\n').filter(p => p.trim())
+    const chapterCount = Math.max(1, paragraphs.length)
+    
     const newArticle = {
       id: `custom-article-${Date.now()}`,
       name: articleTitle || `自定义文章 - ${Date.now()}`,
       title: articleTitle || `自定义文章 - ${Date.now()}`,
       description: articleDescription || '用户自定义文章',
       content: articleContent,
-      category: '自定义',
+      category: '文章练习',
       tags: ['自定义'],
       language: 'en' as const,
       languageCategory: 'ar' as const,
-      length: articleContent.length,
+      length: chapterCount, // 使用段落数量作为章节数
       url: '',
       createdAt: new Date().toISOString(),
     }

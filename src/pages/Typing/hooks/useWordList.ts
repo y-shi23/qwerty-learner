@@ -38,13 +38,14 @@ export function useWordList(): UseWordListResult {
         const customArticles = JSON.parse(localStorage.getItem('custom-articles') || '[]')
         const customArticle = customArticles.find((article: any) => article.id === currentDictInfo.id)
         if (customArticle?.content) {
-          // Convert article content to Word format
-          return [{
-            name: customArticle.content,
+          // Convert article content to Word format - each paragraph as a chapter
+          const paragraphs = customArticle.content.split('\n\n').filter((p: string) => p.trim())
+          return paragraphs.map((paragraph: string) => ({
+            name: paragraph.trim(),
             trans: [''],
             usphone: '',
             ukphone: ''
-          }]
+          }))
         }
       } else {
         // Handle custom dictionaries
@@ -66,10 +67,20 @@ export function useWordList(): UseWordListResult {
     } else if (isReviewMode) {
       newWords = reviewRecord?.words ?? []
     } else if (isCustomDict && customWordList) {
-      // For custom dictionaries, use the content from localStorage
-      newWords = customWordList.slice(currentChapter * CHAPTER_LENGTH, (currentChapter + 1) * CHAPTER_LENGTH)
+      // For custom articles, each item in customWordList is already a chapter
+      if (currentDictInfo.id.startsWith('custom-article-')) {
+        newWords = customWordList[currentChapter] ? [customWordList[currentChapter]] : []
+      } else {
+        // For custom dictionaries, use the content from localStorage
+        newWords = customWordList.slice(currentChapter * CHAPTER_LENGTH, (currentChapter + 1) * CHAPTER_LENGTH)
+      }
     } else if (wordList) {
-      newWords = wordList.slice(currentChapter * CHAPTER_LENGTH, (currentChapter + 1) * CHAPTER_LENGTH)
+      // For built-in articles, each item in wordList is a chapter
+      if (currentDictInfo.category === '文章练习') {
+        newWords = wordList[currentChapter] ? [wordList[currentChapter]] : []
+      } else {
+        newWords = wordList.slice(currentChapter * CHAPTER_LENGTH, (currentChapter + 1) * CHAPTER_LENGTH)
+      }
     } else {
       newWords = []
     }

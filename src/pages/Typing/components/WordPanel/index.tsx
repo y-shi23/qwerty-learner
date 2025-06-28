@@ -6,9 +6,9 @@ import Phonetic from './components/Phonetic'
 import Translation from './components/Translation'
 import WordComponent from './components/Word'
 import { usePrefetchPronunciationSound } from '@/hooks/usePronunciation'
-import { isReviewModeAtom, isShowPrevAndNextWordAtom, loopWordConfigAtom, phoneticConfigAtom, reviewModeInfoAtom } from '@/store'
+import { currentChapterAtom, currentDictInfoAtom, isReviewModeAtom, isShowPrevAndNextWordAtom, loopWordConfigAtom, phoneticConfigAtom, reviewModeInfoAtom } from '@/store'
 import type { Word } from '@/typings'
-import { useAtomValue, useSetAtom } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { useCallback, useContext, useMemo, useState } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
 
@@ -22,6 +22,8 @@ export default function WordPanel() {
   const { times: loopWordTimes } = useAtomValue(loopWordConfigAtom)
   const currentWord = state.chapterData.words[state.chapterData.index]
   const nextWord = state.chapterData.words[state.chapterData.index + 1] as Word | undefined
+  const [currentChapter, setCurrentChapter] = useAtom(currentChapterAtom)
+  const currentDictInfo = useAtomValue(currentDictInfoAtom)
 
   const setReviewModeInfo = useSetAtom(reviewModeInfoAtom)
   const isReviewMode = useAtomValue(isReviewModeAtom)
@@ -92,15 +94,29 @@ export default function WordPanel() {
 
   const onSkipWord = useCallback(
     (type: 'prev' | 'next') => {
-      if (type === 'prev') {
-        dispatch({ type: TypingStateActionType.SKIP_2_WORD_INDEX, newIndex: prevIndex })
-      }
-
-      if (type === 'next') {
-        dispatch({ type: TypingStateActionType.SKIP_2_WORD_INDEX, newIndex: nextIndex })
+      // 检查是否为文章训练模式
+      const isArticleMode = currentDictInfo.category === '文章练习' || currentDictInfo.id.startsWith('custom-article-')
+      
+      if (isArticleMode) {
+        // 文章模式：切换章节
+        if (type === 'prev' && currentChapter > 0) {
+          setCurrentChapter(currentChapter - 1)
+          dispatch({ type: TypingStateActionType.SETUP_CHAPTER, payload: { words: [], shouldShuffle: false } })
+        } else if (type === 'next' && currentChapter < currentDictInfo.chapterCount - 1) {
+          setCurrentChapter(currentChapter + 1)
+          dispatch({ type: TypingStateActionType.SETUP_CHAPTER, payload: { words: [], shouldShuffle: false } })
+        }
+      } else {
+        // 词典模式：切换单词
+        if (type === 'prev') {
+          dispatch({ type: TypingStateActionType.SKIP_2_WORD_INDEX, newIndex: prevIndex })
+        }
+        if (type === 'next') {
+          dispatch({ type: TypingStateActionType.SKIP_2_WORD_INDEX, newIndex: nextIndex })
+        }
       }
     },
-    [dispatch, prevIndex, nextIndex],
+    [dispatch, prevIndex, nextIndex, currentDictInfo, currentChapter, setCurrentChapter],
   )
 
   useHotkeys(

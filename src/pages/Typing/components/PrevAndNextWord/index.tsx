@@ -1,6 +1,6 @@
 import { TypingContext, TypingStateActionType } from '../../store'
 import Tooltip from '@/components/Tooltip'
-import { currentDictInfoAtom, wordDictationConfigAtom } from '@/store'
+import { currentChapterAtom, currentDictInfoAtom, wordDictationConfigAtom } from '@/store'
 import { CTRL } from '@/utils'
 import { useAtomValue } from 'jotai'
 import { useCallback, useContext, useMemo } from 'react'
@@ -12,19 +12,48 @@ export default function PrevAndNextWord({ type }: LastAndNextWordProps) {
   const { state, dispatch } = useContext(TypingContext)!
 
   const wordDictationConfig = useAtomValue(wordDictationConfigAtom)
+  const currentDictInfo = useAtomValue(currentDictInfoAtom)
+  const currentChapter = useAtomValue(currentChapterAtom)
   const newIndex = useMemo(() => state.chapterData.index + (type === 'prev' ? -1 : 1), [state.chapterData.index, type])
   const word = state.chapterData.words[newIndex]
   const shortCutKey = useMemo(() => (type === 'prev' ? `${CTRL} + Shift + ArrowLeft` : `${CTRL} + Shift + ArrowRight`), [type])
-  const currentLanguage = useAtomValue(currentDictInfoAtom).language
+  const currentLanguage = currentDictInfo.language
+  
+  // 检查是否为文章模式
+  const isArticleMode = currentDictInfo.category === '文章练习' || currentDictInfo.id.startsWith('custom-article-')
+  
+  // 在文章模式下，计算章节信息
+  const chapterInfo = useMemo(() => {
+    if (!isArticleMode) return null
+    
+    const targetChapter = type === 'prev' ? currentChapter - 1 : currentChapter + 1
+    const isValidChapter = targetChapter >= 0 && targetChapter < currentDictInfo.chapterCount
+    
+    return {
+      chapterNumber: targetChapter + 1,
+      isValid: isValidChapter
+    }
+  }, [isArticleMode, type, currentChapter, currentDictInfo.chapterCount])
 
   const onClickWord = useCallback(() => {
+    if (isArticleMode) {
+      // 文章模式：章节切换由父组件的快捷键处理，这里不做处理
+      return
+    }
+    
     if (!word) return
 
     if (type === 'prev') dispatch({ type: TypingStateActionType.SKIP_2_WORD_INDEX, newIndex })
     if (type === 'next') dispatch({ type: TypingStateActionType.SKIP_2_WORD_INDEX, newIndex })
-  }, [type, dispatch, newIndex, word])
+  }, [type, dispatch, newIndex, word, isArticleMode])
 
   const headWord = useMemo(() => {
+    if (isArticleMode) {
+      // 文章模式：显示章节信息
+      if (!chapterInfo?.isValid) return ''
+      return `第 ${chapterInfo.chapterNumber} 章`
+    }
+    
     if (!word) return ''
 
     const showWord = ['romaji'].includes(currentLanguage) ? word.notation : word.name
@@ -34,11 +63,11 @@ export default function PrevAndNextWord({ type }: LastAndNextWordProps) {
     if (type === 'next') {
       return !wordDictationConfig.isOpen ? showWord : (showWord || '').replace(/./g, '_')
     }
-  }, [word, currentLanguage, type, wordDictationConfig.isOpen])
+  }, [word, currentLanguage, type, wordDictationConfig.isOpen, isArticleMode, chapterInfo])
 
   return (
     <>
-      {word ? (
+      {(word || (isArticleMode && chapterInfo?.isValid)) ? (
         <Tooltip content={`快捷键: ${shortCutKey}`}>
           <div
             onClick={onClickWord}

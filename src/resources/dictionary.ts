@@ -3530,13 +3530,13 @@ const germanExam: DictionaryResource[] = [
 //文章
 const article: DictionaryResource[] = [
   {
-    id: 'german2en',
+    id: 'wander-as-cloud',
     name: 'wander as cloud',
     description: '英语文章练习，支持长文本自动换行',
     category: '文章练习',
     tags: ['诗歌'],
     url: '/dicts/wander.json',
-    length: 5,
+    length: 2, // 文章有2个段落/章节
     language: 'en',
     languageCategory: 'ar',
   },
@@ -3580,7 +3580,7 @@ export const dictionaryResources: DictionaryResource[] = [
 
 export const dictionaries: Dictionary[] = dictionaryResources.map((resource) => ({
   ...resource,
-  chapterCount: calcChapterCount(resource.length),
+  chapterCount: resource.category === '文章练习' ? resource.length : calcChapterCount(resource.length),
 }))
 
 /**

@@ -5,18 +5,22 @@ import Tooltip from '@/components/Tooltip'
 import { currentChapterAtom, currentDictInfoAtom, isReviewModeAtom } from '@/store'
 import { Dialog } from '@headlessui/react'
 import * as ScrollArea from '@radix-ui/react-scroll-area'
-import { atom, useAtomValue } from 'jotai'
+import { atom, useAtom, useAtomValue } from 'jotai'
 import { useContext, useState } from 'react'
 import ListIcon from '~icons/tabler/list'
 import IconX from '~icons/tabler/x'
 
 const currentDictTitle = atom((get) => {
   const isReviewMode = get(isReviewModeAtom)
+  const currentDictInfo = get(currentDictInfoAtom)
+  const isArticleMode = currentDictInfo.category === '文章练习' || currentDictInfo.id.startsWith('custom-article-')
 
   if (isReviewMode) {
-    return `${get(currentDictInfoAtom).name} 错题复习`
+    return `${currentDictInfo.name} 错题复习`
+  } else if (isArticleMode) {
+    return `${currentDictInfo.name} 章节列表`
   } else {
-    return `${get(currentDictInfoAtom).name} 第 ${get(currentChapterAtom) + 1} 章`
+    return `${currentDictInfo.name} 第 ${get(currentChapterAtom) + 1} 章`
   }
 })
 
@@ -26,6 +30,9 @@ export default function WordList() {
 
   const [isOpen, setIsOpen] = useState(false)
   const currentDictTitleValue = useAtomValue(currentDictTitle)
+  const [currentChapter, setCurrentChapter] = useAtom(currentChapterAtom)
+  const currentDictInfo = useAtomValue(currentDictInfoAtom)
+  const isArticleMode = currentDictInfo.category === '文章练习' || currentDictInfo.id.startsWith('custom-article-')
 
   function closeModal() {
     setIsOpen(false)
@@ -56,9 +63,38 @@ export default function WordList() {
         <ScrollArea.Root className="flex-1 select-none overflow-y-auto ">
           <ScrollArea.Viewport className="h-full w-full px-3">
             <div className="flex h-full w-full flex-col gap-1">
-              {state.chapterData.words?.map((word, index) => {
-                return <WordCard word={word} key={`${word.name}_${index}`} isActive={state.chapterData.index === index} />
-              })}
+              {isArticleMode ? (
+                // 文章模式：显示章节列表
+                Array.from({ length: currentDictInfo.chapterCount }, (_, index) => (
+                  <div
+                    key={index}
+                    onClick={() => {
+                      setCurrentChapter(index)
+                      dispatch({ type: TypingStateActionType.SETUP_CHAPTER, payload: { words: [], shouldShuffle: false } })
+                      closeModal()
+                    }}
+                    className={`cursor-pointer rounded-lg border p-3 transition-colors ${
+                      currentChapter === index
+                        ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                        : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-gray-900 dark:text-gray-100">
+                        第 {index + 1} 章
+                      </span>
+                      {currentChapter === index && (
+                        <span className="text-sm text-indigo-600 dark:text-indigo-400">当前章节</span>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                // 词典模式：显示单词列表
+                state.chapterData.words?.map((word, index) => {
+                  return <WordCard word={word} key={`${word.name}_${index}`} isActive={state.chapterData.index === index} />
+                })
+              )}
             </div>
           </ScrollArea.Viewport>
           <ScrollArea.Scrollbar className="flex touch-none select-none bg-transparent " orientation="vertical"></ScrollArea.Scrollbar>
