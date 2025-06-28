@@ -1,4 +1,5 @@
 import { GalleryContext } from '.'
+import arFlag from '@/assets/flags/ar.png'
 import deFlag from '@/assets/flags/de.png'
 import enFlag from '@/assets/flags/en.png'
 import jpFlag from '@/assets/flags/ja.png'
@@ -16,6 +17,7 @@ const options: LanguageTabOption[] = [
   { id: 'en', name: '英语', flag: enFlag },
   { id: 'ja', name: '日语', flag: jpFlag },
   { id: 'de', name: '德语', flag: deFlag },
+  { id: 'ar', name: '文章', flag: arFlag },
 ]
 
 export function LanguageTabSwitcher() {
