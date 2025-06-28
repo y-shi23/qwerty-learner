@@ -3,6 +3,7 @@ import { reviewInfoAtom } from './reviewInfoAtom'
 import { DISMISS_START_CARD_DATE_KEY, defaultFontSizeConfig, defaultBackgroundConfig } from '@/constants'
 import { idDictionaryMap } from '@/resources/dictionary'
 import { correctSoundResources, keySoundResources, wrongSoundResources } from '@/resources/soundResource'
+import { getDictInfo } from '@/utils/dictUtils'
 import type {
   Dictionary,
   InfoPanelState,
@@ -19,7 +20,7 @@ import { atomWithStorage } from 'jotai/utils'
 export const currentDictIdAtom = atomWithStorage('currentDict', 'cet4')
 export const currentDictInfoAtom = atom<Dictionary>((get) => {
   const id = get(currentDictIdAtom)
-  let dict = idDictionaryMap[id]
+  let dict = getDictInfo(id)
   // 如果 dict 不存在，则返回 cet4. Typing 中会检查 DictId 是否存在，如果不存在则会重置为 cet4
   if (!dict) {
     dict = idDictionaryMap.cet4

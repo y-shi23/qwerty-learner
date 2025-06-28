@@ -3,8 +3,8 @@ import useGetWord from './hooks/useGetWord'
 import { currentRowDetailAtom } from './store'
 import type { groupedWordRecords } from './type'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { idDictionaryMap } from '@/resources/dictionary'
 import { recordErrorBookAction } from '@/utils'
+import { getDictInfo } from '@/utils/dictUtils'
 import { useSetAtom } from 'jotai'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
@@ -18,7 +18,7 @@ type IErrorRowProps = {
 
 const ErrorRow: FC<IErrorRowProps> = ({ record, onDelete, onWordUpdate }) => {
   const setCurrentRowDetail = useSetAtom(currentRowDetailAtom)
-  const dictInfo = idDictionaryMap[record.dict]
+  const dictInfo = getDictInfo(record.dict)
   const { word, isLoading, hasError } = useGetWord(record.word, dictInfo)
   const prevWordRef = useRef<any>()
   const stableWord = useMemo(() => word, [word])
