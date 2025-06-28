@@ -235,10 +235,10 @@ export default function ViewSetting() {
           </div>
           <div className="ml-4 flex gap-2">
             <button className="my-btn-primary disabled:bg-gray-300" type="button" onClick={onSaveBackground} title="保存背景设置">
-              保存背景设置
+              保存
             </button>
             <button className="my-btn-primary disabled:bg-gray-300" type="button" onClick={onResetBackground} title="重置背景设置">
-              重置背景设置
+              重置
             </button>
           </div>
         </div>
