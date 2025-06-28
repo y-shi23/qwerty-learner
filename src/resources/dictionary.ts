@@ -3534,7 +3534,7 @@ const article: DictionaryResource[] = [
     name: 'wander as cloud',
     description: '英语文章练习，支持长文本自动换行',
     category: '文章练习',
-    tags: ['基础', '诗歌'],
+    tags: ['诗歌'],
     url: '/dicts/wander.json',
     length: 5,
     language: 'en',
@@ -3546,9 +3546,11 @@ const article: DictionaryResource[] = [
  * Why arrays? Because it keeps the order across browsers.
  */
 const customDictionaries: DictionaryResource[] = JSON.parse(localStorage.getItem('custom-dictionaries') || '[]')
+const customArticles: DictionaryResource[] = JSON.parse(localStorage.getItem('custom-articles') || '[]')
 
 export const dictionaryResources: DictionaryResource[] = [
   ...customDictionaries,
+  ...customArticles,
   ...chinaExam,
   ...internationalExam,
   ...childrenEnglish,

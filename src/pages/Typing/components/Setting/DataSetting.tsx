@@ -64,13 +64,13 @@ export default function DataSetting() {
           <div className={styles.section}>
             <span className={styles.sectionLabel}>数据导出</span>
             <span className={styles.sectionDescription}>
-              目前，用户的练习数据、自定义词典和背景配置<strong>仅保存在本地</strong>。如果您需要在不同的设备、浏览器或者其他非官方部署上使用 Qwerty Learner，
-              您需要手动进行数据同步和保存。为了保留您的练习进度、自定义词典、背景配置，以及使用近期即将上线的数据分析和智能训练功能，
+              目前，用户的练习数据、自定义词典、自定义文章和背景配置<strong>仅保存在本地</strong>。如果您需要在不同的设备、浏览器或者其他非官方部署上使用 Qwerty Learner，
+              您需要手动进行数据同步和保存。为了保留您的练习进度、自定义词典、自定义文章、背景配置，以及使用近期即将上线的数据分析和智能训练功能，
               我们建议您及时备份您的数据。
             </span>
             <div className="text-sm leading-6 text-gray-600">
-              <p>导出练习数据、自定义词典和背景配置，用于备份或迁移到其他设备。</p>
-              <p>包含：单词练习记录、章节练习记录、复习记录、自定义词典、背景配置</p>
+              <p>导出练习数据、自定义词典、自定义文章和背景配置，用于备份或迁移到其他设备。</p>
+              <p>包含：单词练习记录、章节练习记录、复习记录、自定义词典、自定义文章、背景配置</p>
             </div>
             <span className="pl-4 text-left text-sm font-bold leading-tight text-red-500">
               为了您的数据安全，请不要修改导出的数据文件。
@@ -101,10 +101,10 @@ export default function DataSetting() {
           <div className={styles.section}>
             <span className={styles.sectionLabel}>数据导入</span>
             <span className={styles.sectionDescription}>
-              请注意，导入数据将<strong className="text-sm font-bold text-red-500"> 完全覆盖 </strong>当前的练习数据和自定义词典。请谨慎操作。
+              请注意，导入数据将<strong className="text-sm font-bold text-red-500"> 完全覆盖 </strong>当前的练习数据、自定义词典和自定义文章。请谨慎操作。
             </span>
             <div className="text-sm leading-6 text-gray-600">
-              <p>导入数据将完全覆盖当前的练习数据、自定义词典和背景配置。</p>
+              <p>导入数据将完全覆盖当前的练习数据、自定义词典、自定义文章和背景配置。</p>
               <p>请确保导入的文件是通过本应用导出的有效数据文件。</p>
             </div>
 

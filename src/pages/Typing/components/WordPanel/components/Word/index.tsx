@@ -77,7 +77,7 @@ export default function WordComponent({ word, onFinish }: { word: Word; onFinish
 
       // 在文章练习模式下，如果启用了隐藏标点符号，则过滤掉标点符号
       if (currentLanguageCategory === 'ar' && punctuationConfig.isHidePunctuation) {
-        headword = headword.replace(/[.,:;!?"'()\[\]{}\-—]/g, '')
+        headword = headword.replace(/[.,:;!?"'’()\[\]{}\-—]/g, '')
       }
     } catch (e) {
       console.error('word.name is not a string', word)

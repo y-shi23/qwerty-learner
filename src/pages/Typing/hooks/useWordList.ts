@@ -30,12 +30,28 @@ export function useWordList(): UseWordListResult {
   // Check if this is a custom dictionary
   const isCustomDict = currentDictInfo.id.startsWith('custom-')
 
-  // For custom dictionaries, get data from localStorage instead of fetching
+  // For custom dictionaries and articles, get data from localStorage instead of fetching
   const customWordList = useMemo(() => {
     if (isCustomDict) {
-      const customDicts = JSON.parse(localStorage.getItem('custom-dictionaries') || '[]')
-      const customDict = customDicts.find((dict: any) => dict.id === currentDictInfo.id)
-      return customDict?.content || []
+      if (currentDictInfo.id.startsWith('custom-article-')) {
+        // Handle custom articles
+        const customArticles = JSON.parse(localStorage.getItem('custom-articles') || '[]')
+        const customArticle = customArticles.find((article: any) => article.id === currentDictInfo.id)
+        if (customArticle?.content) {
+          // Convert article content to Word format
+          return [{
+            name: customArticle.content,
+            trans: [''],
+            usphone: '',
+            ukphone: ''
+          }]
+        }
+      } else {
+        // Handle custom dictionaries
+        const customDicts = JSON.parse(localStorage.getItem('custom-dictionaries') || '[]')
+        const customDict = customDicts.find((dict: any) => dict.id === currentDictInfo.id)
+        return customDict?.content || []
+      }
     }
     return null
   }, [isCustomDict, currentDictInfo.id])

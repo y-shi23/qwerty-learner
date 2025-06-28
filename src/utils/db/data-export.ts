@@ -23,8 +23,9 @@ export async function exportDatabase(callback: (exportProgress: ExportProgress) 
   })
   const [wordCount, chapterCount] = await Promise.all([db.wordRecords.count(), db.chapterRecords.count()])
 
-  // 获取自定义词典数据和背景配置
+  // 获取自定义词典数据、自定义文章数据和背景配置
   const customDictionaries = JSON.parse(localStorage.getItem('custom-dictionaries') || '[]')
+  const customArticles = JSON.parse(localStorage.getItem('custom-articles') || '[]')
   const backgroundConfig = JSON.parse(localStorage.getItem('backgroundConfig') || '{}')
 
   // 将数据库数据和自定义数据合并
@@ -33,6 +34,7 @@ export async function exportDatabase(callback: (exportProgress: ExportProgress) 
   const exportData = {
     ...dbData,
     customDictionaries,
+    customArticles,
     backgroundConfig
   }
 
@@ -65,6 +67,13 @@ export async function importDatabase(onStart: () => void, callback: (importProgr
       localStorage.setItem('custom-dictionaries', JSON.stringify(importData.customDictionaries))
       // 从导入数据中移除自定义词典，避免影响数据库导入
       delete importData.customDictionaries
+    }
+
+    // 处理自定义文章数据
+    if (importData.customArticles) {
+      localStorage.setItem('custom-articles', JSON.stringify(importData.customArticles))
+      // 从导入数据中移除自定义文章，避免影响数据库导入
+      delete importData.customArticles
     }
 
     // 处理背景配置数据
