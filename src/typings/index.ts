@@ -2,8 +2,8 @@ export * from './resource'
 
 export type PronunciationType = 'us' | 'uk' | 'romaji' | 'zh' | 'ja' | 'de' 
 export type PhoneticType = 'us' | 'uk' | 'romaji' | 'zh' | 'ja' | 'de' 
-export type LanguageType = 'en' | 'romaji' | 'zh' | 'ja' | 'code' | 'de' 
-export type LanguageCategoryType = 'en' | 'ja' | 'de' | 'code'
+export type LanguageType = 'en' | 'romaji' | 'zh' | 'ja' | 'de' 
+export type LanguageCategoryType = 'en' | 'ja' | 'de'
 type Pronunciation2PhoneticMap = Record<PronunciationType, PhoneticType>
 
 export const PRONUNCIATION_PHONETIC_MAP: Pronunciation2PhoneticMap = {

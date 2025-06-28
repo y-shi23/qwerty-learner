@@ -3,7 +3,6 @@ import logo from '@/assets/logo.svg'
 import directoryImg from '@/assets/mobile/carousel/directory.png'
 import hotImg from '@/assets/mobile/carousel/hot.png'
 import indexImg from '@/assets/mobile/carousel/index.png'
-import codeImg from '@/assets/mobile/detail/code.png'
 import dictationImg from '@/assets/mobile/detail/dictation.png'
 import phoneticImg from '@/assets/mobile/detail/phonetic.png'
 import speedImg from '@/assets/mobile/detail/speed.png'
@@ -25,11 +24,6 @@ const detail = [
     title: '实时反馈',
     description: '显示输入速度和正确率，量化技能提升',
     img: speedImg,
-  },
-  {
-    title: '为程序员定制',
-    description: '内置编程相关词库，提高工作效率',
-    img: codeImg,
   },
 ]
 

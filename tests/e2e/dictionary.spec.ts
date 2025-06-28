@@ -27,15 +27,6 @@ test.describe('Dictionary manage', () => {
         .first()
         .isVisible(),
     ).toBeTruthy()
-
-    await page.getByRole('radio', { name: /^Code$/ }).click()
-    await expect(await page.getByRole('radio', { name: /^Code$/ }).getAttribute('aria-checked')).toBeTruthy()
-    await expect(
-      await page
-        .getByRole('button', { name: /Coder Dict/g })
-        .first()
-        .isVisible(),
-    ).toBeTruthy()
   })
 
   test('Switch category', async ({ page }) => {

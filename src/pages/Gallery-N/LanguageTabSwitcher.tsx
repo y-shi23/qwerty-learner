@@ -1,10 +1,7 @@
 import { GalleryContext } from '.'
-import codeFlag from '@/assets/flags/code.png'
 import deFlag from '@/assets/flags/de.png'
 import enFlag from '@/assets/flags/en.png'
-import idFlag from '@/assets/flags/id.png'
 import jpFlag from '@/assets/flags/ja.png'
-import kkFlag from '@/assets/flags/kk.png'
 import type { LanguageCategoryType } from '@/typings'
 import { RadioGroup } from '@headlessui/react'
 import { useCallback, useContext } from 'react'
@@ -19,7 +16,6 @@ const options: LanguageTabOption[] = [
   { id: 'en', name: '英语', flag: enFlag },
   { id: 'ja', name: '日语', flag: jpFlag },
   { id: 'de', name: '德语', flag: deFlag },
-  { id: 'code', name: 'Code', flag: codeFlag },
 ]
 
 export function LanguageTabSwitcher() {
