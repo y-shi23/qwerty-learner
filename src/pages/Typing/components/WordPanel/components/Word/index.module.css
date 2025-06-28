@@ -42,3 +42,28 @@
   fill: theme('colors.gray.50');
   opacity: 0.8;
 }
+
+/* 文章类型的样式优化 */
+.article-container {
+  line-height: 1.6;
+  max-width: min(80vw, 900px); /* 减小宽度，保持小于顶部工具栏 */
+  width: 100%;
+  overflow: hidden; /* 防止内容溢出 */
+}
+
+.article-line {
+  margin-bottom: 0.5rem;
+  min-height: 1.2em;
+  transition: opacity 0.3s ease-in-out;
+}
+
+@media (max-width: 768px) {
+  .article-container {
+    max-width: 95vw;
+    padding: 0 1rem;
+  }
+
+  .article-line {
+    margin-bottom: 0.3rem;
+  }
+}

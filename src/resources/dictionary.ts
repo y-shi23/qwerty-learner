@@ -3532,14 +3532,14 @@ const article: DictionaryResource[] = [
   {
     id: 'german2en',
     name: 'wander as cloud',
-    description: '德语词汇, 英语翻译',
-    category: '德语学习',
-    tags: ['基础'],
+    description: '英语文章练习，支持长文本自动换行',
+    category: '文章练习',
+    tags: ['基础', '诗歌'],
     url: '/dicts/wander.json',
-    length: 5892,
+    length: 5,
     language: 'en',
     languageCategory: 'ar',
-  }
+  },
 ]
 /**
  * Built-in dictionaries in an array.

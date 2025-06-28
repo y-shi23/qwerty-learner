@@ -1,5 +1,5 @@
 import styles from './index.module.css'
-import { isIgnoreCaseAtom, isShowAnswerOnHoverAtom, isShowPrevAndNextWordAtom, isTextSelectableAtom, randomConfigAtom } from '@/store'
+import { isIgnoreCaseAtom, isShowAnswerOnHoverAtom, isShowPrevAndNextWordAtom, isTextSelectableAtom, punctuationConfigAtom, randomConfigAtom } from '@/store'
 import { Switch } from '@headlessui/react'
 import * as ScrollArea from '@radix-ui/react-scroll-area'
 import { useAtom } from 'jotai'
@@ -11,6 +11,7 @@ export default function AdvancedSetting() {
   const [isIgnoreCase, setIsIgnoreCase] = useAtom(isIgnoreCaseAtom)
   const [isTextSelectable, setIsTextSelectable] = useAtom(isTextSelectableAtom)
   const [isShowAnswerOnHover, setIsShowAnswerOnHover] = useAtom(isShowAnswerOnHoverAtom)
+  const [punctuationConfig, setPunctuationConfig] = useAtom(punctuationConfigAtom)
 
   const onToggleRandom = useCallback(
     (checked: boolean) => {
@@ -47,6 +48,16 @@ export default function AdvancedSetting() {
       setIsShowAnswerOnHover(checked)
     },
     [setIsShowAnswerOnHover],
+  )
+
+  const onToggleHidePunctuation = useCallback(
+    (checked: boolean) => {
+      setPunctuationConfig((prev) => ({
+        ...prev,
+        isHidePunctuation: checked,
+      }))
+    },
+    [setPunctuationConfig],
   )
 
   return (
@@ -110,6 +121,18 @@ export default function AdvancedSetting() {
               </Switch>
               <span className="text-right text-xs font-normal leading-tight text-gray-600">{`显示提示已${
                 isShowAnswerOnHover ? '开启' : '关闭'
+              }`}</span>
+            </div>
+          </div>
+          <div className={styles.section}>
+            <span className={styles.sectionLabel}>文章练习时隐藏标点符号</span>
+            <span className={styles.sectionDescription}>开启后，文章练习时不显示标点符号，也不需要输入标点符号</span>
+            <div className={styles.switchBlock}>
+              <Switch checked={punctuationConfig.isHidePunctuation} onChange={onToggleHidePunctuation} className="switch-root">
+                <span aria-hidden="true" className="switch-thumb" />
+              </Switch>
+              <span className="text-right text-xs font-normal leading-tight text-gray-600">{`隐藏标点符号已${
+                punctuationConfig.isHidePunctuation ? '开启' : '关闭'
               }`}</span>
             </div>
           </div>
