@@ -26,10 +26,10 @@ export function useWordList(): UseWordListResult {
   }
 
   const isFirstChapter = !isReviewMode && currentDictInfo.id === 'cet4' && currentChapter === 0
-  
+
   // Check if this is a custom dictionary
   const isCustomDict = currentDictInfo.id.startsWith('custom-')
-  
+
   // For custom dictionaries, get data from localStorage instead of fetching
   const customWordList = useMemo(() => {
     if (isCustomDict) {
@@ -39,12 +39,9 @@ export function useWordList(): UseWordListResult {
     }
     return null
   }, [isCustomDict, currentDictInfo.id])
-  
+
   // Only use SWR for non-custom dictionaries
-  const { data: wordList, error, isLoading } = useSWR(
-    isCustomDict ? null : currentDictInfo.url, 
-    wordListFetcher
-  )
+  const { data: wordList, error, isLoading } = useSWR(isCustomDict ? null : currentDictInfo.url, wordListFetcher)
 
   const words: WordWithIndex[] = useMemo(() => {
     let newWords: Word[]
@@ -79,10 +76,10 @@ export function useWordList(): UseWordListResult {
     })
   }, [isFirstChapter, isReviewMode, isCustomDict, customWordList, wordList, reviewRecord?.words, currentChapter])
 
-  return { 
-    words, 
-    isLoading: isCustomDict ? false : isLoading, 
-    error: isCustomDict ? undefined : error 
+  return {
+    words,
+    isLoading: isCustomDict ? false : isLoading,
+    error: isCustomDict ? undefined : error,
   }
 }
 

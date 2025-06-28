@@ -1,9 +1,8 @@
 import atomForConfig from './atomForConfig'
 import { reviewInfoAtom } from './reviewInfoAtom'
-import { DISMISS_START_CARD_DATE_KEY, defaultFontSizeConfig, defaultBackgroundConfig } from '@/constants'
+import { DISMISS_START_CARD_DATE_KEY, defaultBackgroundConfig, defaultFontSizeConfig } from '@/constants'
 import { idDictionaryMap } from '@/resources/dictionary'
 import { correctSoundResources, keySoundResources, wrongSoundResources } from '@/resources/soundResource'
-import { getDictInfo } from '@/utils/dictUtils'
 import type {
   Dictionary,
   InfoPanelState,
@@ -14,6 +13,7 @@ import type {
   WordDictationType,
 } from '@/typings'
 import type { ReviewRecord } from '@/utils/db/record'
+import { getDictInfo } from '@/utils/dictUtils'
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 

@@ -74,7 +74,7 @@ export default function WordComponent({ word, onFinish }: { word: Word; onFinish
     try {
       headword = word.name.replace(new RegExp(' ', 'g'), EXPLICIT_SPACE)
       headword = headword.replace(new RegExp('…', 'g'), '..')
-      
+
       // 在文章练习模式下，如果启用了隐藏标点符号，则过滤掉标点符号
       if (currentLanguageCategory === 'ar' && punctuationConfig.isHidePunctuation) {
         headword = headword.replace(/[.,:;!?"'()\[\]{}\-—]/g, '')

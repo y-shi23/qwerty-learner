@@ -7,7 +7,7 @@ export function getDictInfo(dictId: string): Dictionary | undefined {
   if (idDictionaryMap[dictId]) {
     return idDictionaryMap[dictId]
   }
-  
+
   // 检查是否是自定义词典
   if (dictId.startsWith('custom-')) {
     const customDicts = JSON.parse(localStorage.getItem('custom-dictionaries') || '[]')
@@ -24,10 +24,10 @@ export function getDictInfo(dictId: string): Dictionary | undefined {
         length: customDict.length,
         url: '', // 自定义词典不使用URL
         chapterCount: 1,
-        defaultPronIndex: undefined
+        defaultPronIndex: undefined,
       } as Dictionary
     }
   }
-  
+
   return undefined
 }
