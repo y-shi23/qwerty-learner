@@ -5,9 +5,14 @@ import * as pdfjsLib from 'pdfjs-dist'
 import type { ChangeEvent, DragEvent } from 'react'
 import { useRef, useState } from 'react'
 import * as XLSX from 'xlsx'
+import IconMinusCircle from '~icons/mdi/minus-circle-outline'
 
 // 设置 PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+
+interface Chapter {
+  content: string
+}
 
 interface CustomArticleTabProps {
   onSave: (article: any) => void
@@ -18,7 +23,7 @@ export function CustomArticleTab({ onSave, onCancel }: CustomArticleTabProps) {
   const [articleContent, setArticleContent] = useState('')
   const [articleTitle, setArticleTitle] = useState('')
   const [articleDescription, setArticleDescription] = useState('')
-  const [showPreview, setShowPreview] = useState(false)
+  const [chapters, setChapters] = useState<Chapter[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const processTextFile = async (file: File) => {
@@ -27,7 +32,8 @@ export function CustomArticleTab({ onSave, onCancel }: CustomArticleTabProps) {
     if (!articleTitle) {
       setArticleTitle(file.name.replace(/\.(txt|md|markdown)$/i, ''))
     }
-    setShowPreview(true)
+    // 自动按换行和空行分节符划分章节
+    autoSplitChapters(text)
   }
 
   const processWordFile = async (file: File) => {
@@ -37,7 +43,8 @@ export function CustomArticleTab({ onSave, onCancel }: CustomArticleTabProps) {
     if (!articleTitle) {
       setArticleTitle(file.name.replace(/\.(doc|docx)$/i, ''))
     }
-    setShowPreview(true)
+    // 自动按换行和空行分节符划分章节
+    autoSplitChapters(result.value)
   }
 
   const processPdfFile = async (file: File) => {
@@ -56,7 +63,8 @@ export function CustomArticleTab({ onSave, onCancel }: CustomArticleTabProps) {
     if (!articleTitle) {
       setArticleTitle(file.name.replace(/\.pdf$/i, ''))
     }
-    setShowPreview(true)
+    // 自动按换行和空行分节符划分章节
+    autoSplitChapters(fullText)
   }
 
   const processMarkdownFile = async (file: File) => {
@@ -70,7 +78,8 @@ export function CustomArticleTab({ onSave, onCancel }: CustomArticleTabProps) {
     if (!articleTitle) {
       setArticleTitle(file.name.replace(/\.(md|markdown)$/i, ''))
     }
-    setShowPreview(true)
+    // 自动按换行和空行分节符划分章节
+    autoSplitChapters(plainText)
   }
 
   const processFile = async (file: File) => {
@@ -116,22 +125,77 @@ export function CustomArticleTab({ onSave, onCancel }: CustomArticleTabProps) {
     event.preventDefault()
   }
 
+  // 自动按换行和空行分节符划分章节
+  const autoSplitChapters = (text: string) => {
+    // 优先按双换行符（空行）分割文本
+    const sectionsByEmptyLine = text.split(/\n\s*\n/).filter((section) => section.trim())
+
+    if (sectionsByEmptyLine.length > 1) {
+      // 按空行分割的章节，确保过滤掉空内容
+      const newChapters: Chapter[] = sectionsByEmptyLine
+        .map((section) => section.trim())
+        .filter((content) => content.length > 0)
+        .map((content) => ({ content }))
+
+      setChapters(newChapters)
+    } else {
+      // 如果没有空行，则按单换行符分割，每行作为一个章节
+      const lines = text.split('\n').filter((line) => line.trim())
+      const newChapters: Chapter[] = lines.map((line) => ({
+        content: line.trim(),
+      }))
+
+      setChapters(newChapters)
+    }
+  }
+
+  const handleAddChapter = () => {
+    setChapters([...chapters, { content: '' }])
+    // 延迟滚动到最后一个章节，确保DOM已更新
+    setTimeout(() => {
+      const chapterListContainer = document.querySelector('.chapter-list-container')
+      if (chapterListContainer) {
+        chapterListContainer.scrollTop = chapterListContainer.scrollHeight
+      }
+    }, 100)
+  }
+
+  const handleRemoveChapter = (index: number) => {
+    setChapters(chapters.filter((_, i) => i !== index))
+  }
+
+  const handleChapterChange = (index: number, value: string) => {
+    const newChapters = [...chapters]
+    newChapters[index].content = value
+    setChapters(newChapters)
+  }
+
   const handleSave = () => {
-    // 计算文章段落数量作为章节数
-    const paragraphs = articleContent.split('\n\n').filter(p => p.trim())
-    const chapterCount = Math.max(1, paragraphs.length)
-    
+    // 过滤掉空内容的章节
+    const validChapters = chapters.filter((chapter) => chapter.content && chapter.content.trim())
+
+    // 使用有效章节数量和内容
+    const chapterCount = validChapters.length
+    // 将章节合并为完整内容，不添加额外标题
+    const finalContent = validChapters.map((chapter) => chapter.content).join('\n\n---\n\n')
+
+    // 转换章节格式为正确的JSON结构，每个章节的name字段直接包含内容
+    const formattedChapters = validChapters.map((chapter) => ({
+      name: chapter.content,
+    }))
+
     const newArticle = {
       id: `custom-article-${Date.now()}`,
       name: articleTitle || `自定义文章 - ${Date.now()}`,
       title: articleTitle || `自定义文章 - ${Date.now()}`,
       description: articleDescription || '用户自定义文章',
-      content: articleContent,
+      content: finalContent,
+      chapters: formattedChapters,
       category: '文章练习',
       tags: ['自定义'],
       language: 'en' as const,
       languageCategory: 'ar' as const,
-      length: chapterCount, // 使用段落数量作为章节数
+      length: chapterCount,
       url: '',
       createdAt: new Date().toISOString(),
     }
@@ -162,7 +226,7 @@ export function CustomArticleTab({ onSave, onCancel }: CustomArticleTabProps) {
         />
       </div>
 
-      {!showPreview && (
+      {chapters.length === 0 && (
         <div
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -185,43 +249,66 @@ export function CustomArticleTab({ onSave, onCancel }: CustomArticleTabProps) {
         </div>
       )}
 
-      {showPreview && (
+      {/* 文章预览（章节列表） */}
+      {chapters.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">文章预览</label>
-            <button
-              onClick={() => {
-                setShowPreview(false)
-                setArticleContent('')
-                setArticleTitle('')
-                setArticleDescription('')
-              }}
-              className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            >
-              重新上传
-            </button>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => {
+                  setChapters([])
+                  setArticleContent('')
+                  setArticleTitle('')
+                  setArticleDescription('')
+                }}
+                className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                重新上传
+              </button>
+            </div>
           </div>
-          <div
-            className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700"
+          <ScrollArea
+            className="chapter-list-container rounded-md border border-gray-300 p-2 dark:border-gray-600 dark:bg-gray-700"
             style={{
-              height: Math.max(200, Math.min(600, articleContent.split('\n').length * 20 + 100)) + 'px',
-              resize: 'vertical',
-              overflow: 'hidden',
+              maxHeight: '12rem',
+              height: chapters.length > 2 ? '12rem' : 'auto',
             }}
           >
-            <ScrollArea className="h-full w-full p-4">
-              <textarea
-                value={articleContent}
-                onChange={(e) => setArticleContent(e.target.value)}
-                className="h-full w-full resize-none border-none bg-transparent text-sm focus:outline-none dark:text-white"
-                placeholder="文章内容将在这里显示，您可以直接编辑..."
-                style={{ minHeight: Math.max(180, articleContent.split('\n').length * 20 + 50) + 'px' }}
-              />
+              <div className="space-y-4">
+                {chapters.map((chapter, index) => (
+                  <div key={index} className="relative">
+                    <div className="mb-2 flex items-center justify-end">
+                      <button
+                        onClick={() => handleRemoveChapter(index)}
+                        className="flex-shrink-0 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
+                      >
+                        <IconMinusCircle className="h-5 w-5" />
+                      </button>
+                    </div>
+                    <textarea
+                      placeholder="请输入章节内容"
+                      value={chapter.content}
+                      onChange={(e) => handleChapterChange(index, e.target.value)}
+                      rows={chapter.content ? Math.max(2, Math.ceil(chapter.content.length / 50)) : 2}
+                      className="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+                      style={{ minHeight: chapter.content ? '4rem' : '2.5rem' }}
+                    />
+                  </div>
+                ))}
+              </div>
             </ScrollArea>
-          </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">字符数: {articleContent.length}</div>
         </div>
       )}
+
+      <div>
+        <button
+          onClick={handleAddChapter}
+          className="text-sm text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+        >
+          + 添加章节
+        </button>
+      </div>
 
       <div className="flex justify-end space-x-3">
         <button
@@ -232,7 +319,7 @@ export function CustomArticleTab({ onSave, onCancel }: CustomArticleTabProps) {
         </button>
         <button
           onClick={handleSave}
-          disabled={!articleContent.trim()}
+          disabled={chapters.filter((chapter) => chapter.content && chapter.content.trim()).length === 0}
           className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-gray-400"
         >
           保存

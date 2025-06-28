@@ -39,12 +39,23 @@ export function useWordList(): UseWordListResult {
         const customArticle = customArticles.find((article: any) => article.id === currentDictInfo.id)
         if (customArticle?.content) {
           // Convert article content to Word format - each paragraph as a chapter
-          const paragraphs = customArticle.content.split('\n\n').filter((p: string) => p.trim())
+          // Handle multiple separator formats: \n\n---\n\n (with separator), \n\n (empty line), and \n (single line)
+          let paragraphs: string[]
+          if (customArticle.content.includes('\n\n---\n\n')) {
+            // New format with explicit separators
+            paragraphs = customArticle.content.split(/\n\n---\n\n/).filter((p: string) => p.trim())
+          } else if (customArticle.content.includes('\n\n')) {
+            // Old format with empty lines
+            paragraphs = customArticle.content.split(/\n\n/).filter((p: string) => p.trim())
+          } else {
+            // Single line format - each line is a chapter
+            paragraphs = customArticle.content.split(/\n/).filter((p: string) => p.trim())
+          }
           return paragraphs.map((paragraph: string) => ({
             name: paragraph.trim(),
             trans: [''],
             usphone: '',
-            ukphone: ''
+            ukphone: '',
           }))
         }
       } else {

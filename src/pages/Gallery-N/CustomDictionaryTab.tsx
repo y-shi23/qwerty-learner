@@ -79,6 +79,9 @@ export function CustomDictionaryTab({ onSave, onCancel }: CustomDictionaryTabPro
   }
 
   const handleSave = () => {
+    // 过滤掉空内容的单词
+    const validWords = words.filter((word) => word.name && word.name.trim() && word.trans && word.trans[0] && word.trans[0].trim())
+
     const newDict = {
       id: `custom-${language}-${Date.now()}`,
       name: dictName || `自定义词典 - ${language}`,
@@ -87,9 +90,9 @@ export function CustomDictionaryTab({ onSave, onCancel }: CustomDictionaryTabPro
       tags: ['自定义'],
       language,
       languageCategory: language,
-      length: words.length,
+      length: validWords.length,
       url: '',
-      content: words as Word[],
+      content: validWords as Word[],
     }
     onSave(newDict)
   }
@@ -164,7 +167,10 @@ export function CustomDictionaryTab({ onSave, onCancel }: CustomDictionaryTabPro
           </div>
           <ScrollArea
             className="word-list-container rounded-md border border-gray-300 p-2 dark:border-gray-600 dark:bg-gray-700"
-            style={{ maxHeight: '12rem', height: words.length > 3 ? '12rem' : 'auto' }}
+            style={{
+              maxHeight: '9rem',
+              height: words.length > 3 ? '9rem' : `${Math.max(3, words.length * 3)}rem`,
+            }}
           >
             <div className="space-y-2">
               {words.map((word, index) => (
@@ -212,7 +218,14 @@ export function CustomDictionaryTab({ onSave, onCancel }: CustomDictionaryTabPro
         >
           取消
         </button>
-        <button onClick={handleSave} className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+        <button
+          onClick={handleSave}
+          disabled={
+            words.length === 0 ||
+            !words.some((word) => word.name && word.name.trim() && word.trans && word.trans[0] && word.trans[0].trim())
+          }
+          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:hover:bg-gray-400"
+        >
           保存
         </button>
       </div>
