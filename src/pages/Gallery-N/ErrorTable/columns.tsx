@@ -84,9 +84,14 @@ export const errorColumns = (onDelete: (word: string) => Promise<void>): ColumnD
 
 export function getRowsFromErrorWordData(data: TErrorWordData[]): ErrorColumn[] {
   return data.map((item) => {
+    const transArray = Array.isArray(item.originData.trans)
+      ? (item.originData.trans as unknown as string[])
+      : item.originData.trans
+      ? [String(item.originData.trans)]
+      : []
     return {
       word: item.word,
-      trans: item.originData.trans.join('，') ?? '',
+      trans: transArray.join('，'),
       errorCount: item.errorCount,
       errorChar: item.errorChar,
     }

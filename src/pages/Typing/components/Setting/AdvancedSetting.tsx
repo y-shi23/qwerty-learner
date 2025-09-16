@@ -67,6 +67,16 @@ export default function AdvancedSetting() {
     [setPunctuationConfig],
   )
 
+  const onToggleSkipSpace = useCallback(
+    (checked: boolean) => {
+      setPunctuationConfig((prev) => ({
+        ...prev,
+        isSkipSpace: checked,
+      }))
+    },
+    [setPunctuationConfig],
+  )
+
   return (
     <ScrollArea.Root className="flex-1 select-none overflow-y-auto ">
       <ScrollArea.Viewport className="h-full w-full px-3">
@@ -140,6 +150,18 @@ export default function AdvancedSetting() {
               </Switch>
               <span className="text-right text-xs font-normal leading-tight text-gray-600">{`隐藏标点符号已${
                 punctuationConfig.isHidePunctuation ? '开启' : '关闭'
+              }`}</span>
+            </div>
+          </div>
+          <div className={styles.section}>
+            <span className={styles.sectionLabel}>文章练习时跳过空格</span>
+            <span className={styles.sectionDescription}>开启后，文章句子中的空格将自动跳过，不再要求输入</span>
+            <div className={styles.switchBlock}>
+              <Switch checked={punctuationConfig.isSkipSpace} onChange={onToggleSkipSpace} className="switch-root">
+                <span aria-hidden="true" className="switch-thumb" />
+              </Switch>
+              <span className="text-right text-xs font-normal leading-tight text-gray-600">{`跳过空格已${
+                punctuationConfig.isSkipSpace ? '开启' : '关闭'
               }`}</span>
             </div>
           </div>

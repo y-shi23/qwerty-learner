@@ -84,6 +84,9 @@ export default function WordComponent({ word, onFinish }: { word: Word; onFinish
       headword = ''
     }
 
+    // 打字序列不包含换行，换行为排版专用
+    headword = headword.replace(/\r?\n/g, '')
+
     const newWordState = structuredClone(initialWordState)
     newWordState.displayWord = headword
     newWordState.letterStates = new Array(headword.length).fill('normal')
@@ -111,16 +114,36 @@ export default function WordComponent({ word, onFinish }: { word: Word; onFinish
             }
           }
 
-          if (updateAction.value === ' ') {
-            updateAction.event.preventDefault()
-            setWordState((state) => {
-              state.inputWord = state.inputWord + EXPLICIT_SPACE
-            })
-          } else {
-            setWordState((state) => {
+          setWordState((state) => {
+            // 文章模式下，若开启跳过空格，则在输入前自动跳过后续空格
+            const isArticleMode = currentLanguageCategory === 'ar'
+            const shouldSkipSpace = isArticleMode && punctuationConfig.isSkipSpace && !state.hasWrong
+
+            if (shouldSkipSpace) {
+              let skipped = 0
+              while (
+                state.inputWord.length < state.displayWord.length &&
+                state.displayWord[state.inputWord.length] === EXPLICIT_SPACE
+              ) {
+                state.inputWord = state.inputWord + EXPLICIT_SPACE
+                state.letterStates[state.inputWord.length - 1] = 'correct'
+                skipped++
+              }
+              if (skipped > 0) state.autoSkipSpaces += skipped
+            }
+
+            // 处理本次输入
+            if (updateAction.value === ' ') {
+              // 全局不直接写空格，使用显式空格符
+              updateAction.event.preventDefault()
+              if (!(isArticleMode && punctuationConfig.isSkipSpace)) {
+                state.inputWord = state.inputWord + EXPLICIT_SPACE
+              }
+              // 若启用跳过空格，则此处不再追加任何字符
+            } else {
               state.inputWord = state.inputWord + updateAction.value
-            })
-          }
+            }
+          })
           break
 
         case 'delete':
@@ -147,7 +170,7 @@ export default function WordComponent({ word, onFinish }: { word: Word; onFinish
           console.warn('unknown update type', updateAction)
       }
     },
-    [wordState.hasWrong, setWordState],
+    [wordState.hasWrong, setWordState, punctuationConfig.isSkipSpace, currentLanguageCategory],
   )
 
   const handleHoverWord = useCallback((checked: boolean) => {
@@ -238,6 +261,24 @@ export default function WordComponent({ word, onFinish }: { word: Word; onFinish
       isEqual = isIgnoreCase ? inputChar.toLowerCase() === correctChar.toLowerCase() : inputChar === correctChar
     }
 
+    // 若本次输入由“自动跳过空格”产生，则不计入声音与计数
+    if (
+      inputChar === EXPLICIT_SPACE &&
+      currentLanguageCategory === 'ar' &&
+      punctuationConfig.isSkipSpace &&
+      wordState.autoSkipSpaces > 0
+    ) {
+      setWordState((state) => {
+        state.autoSkipSpaces -= 1
+        if (inputLength >= state.displayWord.length) {
+          state.letterStates[inputLength - 1] = 'correct'
+          state.isFinished = true
+          state.endTime = getUtcStringForMixpanel()
+        }
+      })
+      return
+    }
+
     if (isEqual) {
       // 输入正确时
       setWordState((state) => {
@@ -275,7 +316,8 @@ export default function WordComponent({ word, onFinish }: { word: Word; onFinish
           const nextChar = state.displayWord[inputLength]
           const isWordBoundary =
             !nextChar ||
-            nextChar === ' ' ||
+            nextChar === EXPLICIT_SPACE ||
+            nextChar === '\n' ||
             nextChar === '.' ||
             nextChar === ',' ||
             nextChar === ';' ||
@@ -284,7 +326,7 @@ export default function WordComponent({ word, onFinish }: { word: Word; onFinish
             nextChar === '?'
 
           // 如果到达单词边界或者下一个字符是空格，必须修正错误
-          if (isWordBoundary || nextChar === ' ') {
+          if (isWordBoundary || nextChar === EXPLICIT_SPACE) {
             state.hasWrong = true
           }
         } else {
@@ -322,7 +364,7 @@ export default function WordComponent({ word, onFinish }: { word: Word; onFinish
             // 找到当前单词的开始位置
             let wordStartIndex = 0
             for (let i = currentInput.length - 1; i >= 0; i--) {
-              if (displayWord[i] === ' ') {
+              if (displayWord[i] === EXPLICIT_SPACE || displayWord[i] === '\n' || /[.,:;!?]/.test(displayWord[i])) {
                 wordStartIndex = i + 1
                 break
               }
@@ -382,101 +424,85 @@ export default function WordComponent({ word, onFinish }: { word: Word; onFinish
     }
   }, [wordState.wrongCount, dispatch])
 
-  // 计算文本换行的函数
+  // 计算文本换行（文章模式下按上传的换行展示）
   const getWrappedLines = useCallback(() => {
     if (currentLanguageCategory !== 'ar') {
       return [{ text: wordState.displayWord, startIndex: 0 }]
     }
 
-    // 基于Header容器宽度计算每行最大字符数，确保不超过顶部工具栏宽度
     const fontSize = fontSizeConfig.foreignFont
-    const charWidth = fontSize * 0.6 // 等宽字体的字符宽度约为字体大小的0.6倍
-
-    const containerMaxWidth = Math.min(windowWidth * 0.6, 1000) // 60vw，最大1000px
-    const availableWidth = containerMaxWidth * 0.95 // 使用95%的容器宽度
+    const charWidth = fontSize * 0.6
+    const containerMaxWidth = Math.min(windowWidth * 0.6, 1000)
+    const availableWidth = containerMaxWidth * 0.95
     const maxCharsPerLine = Math.floor(availableWidth / charWidth)
 
-    const text = wordState.displayWord
+    const rawLines = (word.name || '').split(/\r?\n/)
+    const processSegment = (s: string) => {
+      let t = s.replace(/ /g, EXPLICIT_SPACE).replace(/…/g, '..')
+      if (punctuationConfig.isHidePunctuation) {
+        t = t.replace(/[.,:;!?\"'’()\[\]{}\-—]/g, '')
+      }
+      return t
+    }
+
     const lines: { text: string; startIndex: number }[] = []
     let currentIndex = 0
-
-    while (currentIndex < text.length) {
-      let endIndex = Math.min(currentIndex + maxCharsPerLine, text.length)
-
-      // 如果不是最后一行，优化分词逻辑，平衡空间利用率和单词完整性
-      if (endIndex < text.length) {
-        const charAtEnd = text[endIndex]
-
-        // 如果当前字符不是空格或标点，说明可能在单词中间
-        if (charAtEnd && charAtEnd !== ' ' && !/[.,:;!?]/.test(charAtEnd)) {
-          // 策略1：向前查找最近的断点
-          let bestBreakIndex = -1
-          for (let i = endIndex - 1; i > currentIndex; i--) {
-            const char = text[i]
-            if (char === ' ' || /[.,:;!?]/.test(char)) {
-              bestBreakIndex = i + 1
-              break
-            }
-          }
-
-          if (bestBreakIndex > currentIndex) {
-            const lineUtilization = (bestBreakIndex - currentIndex) / maxCharsPerLine
-
-            // 如果行利用率大于50%，直接使用这个断点
-            if (lineUtilization >= 0.5) {
-              endIndex = bestBreakIndex
-            }
-            // 如果行利用率较低，尝试向后查找更好的断点
-            else {
-              let forwardBreakIndex = -1
-              const searchLimit = Math.min(endIndex + maxCharsPerLine * 0.3, text.length)
-
-              for (let i = endIndex; i < searchLimit; i++) {
-                const char = text[i]
-                if (char === ' ' || /[.,:;!?]/.test(char)) {
-                  forwardBreakIndex = i + 1
-                  break
-                }
-              }
-
-              // 如果向后找到断点且不会超出合理范围，使用向后的断点
-              if (forwardBreakIndex > 0 && forwardBreakIndex - currentIndex <= maxCharsPerLine * 1.2) {
-                endIndex = forwardBreakIndex
-              } else {
-                // 否则使用向前找到的断点
-                endIndex = bestBreakIndex
-              }
-            }
-          }
-          // 如果没找到任何断点，检查是否为超长单词
-          else {
-            // 检查从当前位置开始是否都是一个长单词
-            let wordEndIndex = endIndex
-            for (let i = currentIndex; i < text.length; i++) {
-              if (text[i] === ' ' || /[.,:;!?]/.test(text[i])) {
-                wordEndIndex = i + 1
+    for (const raw of rawLines) {
+      const text = processSegment(raw)
+      let segIndex = 0
+      while (segIndex < text.length) {
+        let endIndex = Math.min(segIndex + maxCharsPerLine, text.length)
+        if (endIndex < text.length) {
+          const charAtEnd = text[endIndex]
+          if (charAtEnd && charAtEnd !== EXPLICIT_SPACE && !/[.,:;!?]/.test(charAtEnd)) {
+            let bestBreakIndex = -1
+            for (let i = endIndex - 1; i > segIndex; i--) {
+              const ch = text[i]
+              if (ch === EXPLICIT_SPACE || /[.,:;!?]/.test(ch)) {
+                bestBreakIndex = i + 1
                 break
               }
             }
-
-            // 如果单词长度超过1.5倍行长度，强制断行
-            if (wordEndIndex - currentIndex > maxCharsPerLine * 1.5) {
-              endIndex = Math.min(currentIndex + maxCharsPerLine, text.length)
+            if (bestBreakIndex > segIndex) {
+              const util = (bestBreakIndex - segIndex) / maxCharsPerLine
+              if (util >= 0.5) {
+                endIndex = bestBreakIndex
+              } else {
+                let forwardBreakIndex = -1
+                const searchLimit = Math.min(endIndex + maxCharsPerLine * 0.3, text.length)
+                for (let i = endIndex; i < searchLimit; i++) {
+                  const ch = text[i]
+                  if (ch === EXPLICIT_SPACE || /[.,:;!?]/.test(ch)) {
+                    forwardBreakIndex = i + 1
+                    break
+                  }
+                }
+                endIndex = forwardBreakIndex > 0 && forwardBreakIndex - segIndex <= maxCharsPerLine * 1.2 ? forwardBreakIndex : bestBreakIndex
+              }
             } else {
-              // 否则包含整个单词
-              endIndex = Math.min(wordEndIndex, text.length)
+              let wordEndIndex = endIndex
+              for (let i = segIndex; i < text.length; i++) {
+                if (text[i] === EXPLICIT_SPACE || /[.,:;!?]/.test(text[i])) {
+                  wordEndIndex = i + 1
+                  break
+                }
+              }
+              if (wordEndIndex - segIndex > maxCharsPerLine * 1.5) {
+                endIndex = Math.min(segIndex + maxCharsPerLine, text.length)
+              } else {
+                endIndex = Math.min(wordEndIndex, text.length)
+              }
             }
           }
         }
+        const lineText = text.slice(segIndex, endIndex)
+        lines.push({ text: lineText, startIndex: currentIndex })
+        segIndex = endIndex
+        currentIndex += lineText.length
       }
-
-      const lineText = text.slice(currentIndex, endIndex)
-      lines.push({ text: lineText, startIndex: currentIndex })
-      currentIndex = endIndex
     }
-
     return lines
-  }, [wordState.displayWord, currentLanguageCategory, fontSizeConfig.foreignFont, windowWidth])
+  }, [currentLanguageCategory, fontSizeConfig.foreignFont, windowWidth, word.name, punctuationConfig.isHidePunctuation, wordState.displayWord])
 
   const wrappedLines = getWrappedLines()
 
@@ -558,11 +584,13 @@ export default function WordComponent({ word, onFinish }: { word: Word; onFinish
                     } ${style['article-line']} transition-opacity duration-300 ${lineOpacity}`}
                   >
                     {line.text.split('').map((t, charIndex) => {
+                      const displayedChar =
+                        t === EXPLICIT_SPACE && punctuationConfig.isSkipSpace && currentLanguageCategory === 'ar' ? '\u00A0' : t
                       const globalIndex = line.startIndex + charIndex
                       return (
                         <Letter
                           key={`${globalIndex}-${t}`}
-                          letter={t}
+                          letter={displayedChar}
                           visible={getLetterVisible(globalIndex)}
                           state={wordState.letterStates[globalIndex]}
                         />
@@ -580,7 +608,11 @@ export default function WordComponent({ word, onFinish }: { word: Word; onFinish
               className={`flex items-center ${isTextSelectable && 'select-all'} justify-center ${wordState.hasWrong ? style.wrong : ''}`}
             >
               {wrappedLines[0].text.split('').map((t, index) => {
-                return <Letter key={`${index}-${t}`} letter={t} visible={getLetterVisible(index)} state={wordState.letterStates[index]} />
+                const displayedChar =
+                  t === EXPLICIT_SPACE && punctuationConfig.isSkipSpace && currentLanguageCategory === 'ar' ? '\u00A0' : t
+                return (
+                  <Letter key={`${index}-${t}`} letter={displayedChar} visible={getLetterVisible(index)} state={wordState.letterStates[index]} />
+                )
               })}
             </div>
           )}

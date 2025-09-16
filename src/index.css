@@ -135,9 +135,27 @@ body,
     @apply absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400;
   }
 
-  .slider {
+.slider {
     @apply relative flex h-10 w-full cursor-pointer select-none items-center;
   }
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Hide Radix ScrollArea viewport scrollbar inside chapter list */
+.chapter-list-container [data-radix-scroll-area-viewport] {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.chapter-list-container [data-radix-scroll-area-viewport]::-webkit-scrollbar {
+  display: none;
+}
   .slider [data-disabled] {
     @apply pointer-events-none opacity-50;
   }

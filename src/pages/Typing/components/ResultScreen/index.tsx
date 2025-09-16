@@ -13,8 +13,10 @@ import {
   randomConfigAtom,
   reviewModeInfoAtom,
   wordDictationConfigAtom,
+  punctuationConfigAtom,
 } from '@/store'
-import type { InfoPanelType } from '@/typings'
+import type { InfoPanelType, WordWithIndex } from '@/typings'
+import { EXPLICIT_SPACE } from '@/constants'
 import { recordOpenInfoPanelAction } from '@/utils'
 import { Transition } from '@headlessui/react'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
@@ -41,6 +43,10 @@ const ResultScreen = () => {
 
   const setReviewModeInfo = useSetAtom(reviewModeInfoAtom)
   const isReviewMode = useAtomValue(isReviewModeAtom)
+  const punctuationConfig = useAtomValue(punctuationConfigAtom)
+  const isArticleMode = useMemo(() => {
+    return currentDictInfo.category === '文章练习' || currentDictInfo.id.startsWith('custom-article-')
+  }, [currentDictInfo])
 
   useEffect(() => {
     // tick a zero timer to calc the stats
@@ -81,6 +87,67 @@ const ResultScreen = () => {
       .map((log) => state.chapterData.words[log.index])
       .filter((word) => word !== undefined)
   }, [state.chapterData.userInputLogs, state.chapterData.words])
+
+  // 为文章模式构建按“词”切分的错词 chips，而不是整篇文章
+  const wrongWordChips: WordWithIndex[] = useMemo(() => {
+    if (!isArticleMode) {
+      return wrongWords
+    }
+
+    const tokenSet = new Set<string>()
+
+    const isBoundary = (ch: string) =>
+      ch === EXPLICIT_SPACE || ch === '\n' || /[.,:;!?"'’()\[\]{}\-—]/.test(ch)
+
+    // 遍历每个有错误的日志，收集对应文章中出错的“词”
+    state.chapterData.userInputLogs
+      .filter((log) => log.wrongCount > 0)
+      .forEach((log) => {
+        const w = state.chapterData.words[log.index]
+        if (!w) return
+
+        // 构建与练习时一致的 display 文本
+        let display = ''
+        try {
+          display = w.name.replace(/ /g, EXPLICIT_SPACE).replace(/…/g, '..')
+          // 文章模式下，如果启用了隐藏标点符号，则过滤掉标点符号
+          if (punctuationConfig.isHidePunctuation) {
+            display = display.replace(/[.,:;!?"'’()\[\]{}\-—]/g, '')
+          }
+        } catch (e) {
+          display = w.name || ''
+        }
+
+        // 预先切分 token 边界，记录每个 token 的起止区间
+        const tokens: Array<{ start: number; end: number; text: string }> = []
+        const n = display.length
+        let i = 0
+        while (i < n) {
+          const ch = display[i]
+          if (isBoundary(ch)) {
+            i += 1
+            continue
+          }
+          const start = i
+          let j = i
+          while (j < n && !isBoundary(display[j])) j++
+          const text = display.slice(start, j)
+          if (text.trim().length > 0) tokens.push({ start, end: j, text })
+          i = j
+        }
+
+        // 将错误的字符索引映射到 token
+        Object.keys(log.LetterMistakes || {}).forEach((k) => {
+          const idx = Number(k)
+          const token = tokens.find((t) => idx >= t.start && idx < t.end)
+          if (token && token.text) tokenSet.add(token.text)
+        })
+      })
+
+    // 生成用于展示的 WordWithIndex 列表（去重后）
+    let idx = 0
+    return Array.from(tokenSet).map((name) => ({ name, trans: [], usphone: '', ukphone: '', index: idx++ }))
+  }, [isArticleMode, wrongWords, punctuationConfig.isHidePunctuation, state.chapterData.userInputLogs, state.chapterData.words])
 
   const isLastChapter = useMemo(() => {
     return currentChapter >= currentDictInfo.chapterCount - 1
@@ -232,12 +299,12 @@ const ResultScreen = () => {
               </div>
               <div className="z-10 ml-6 flex-1 overflow-visible rounded-xl bg-indigo-50 dark:bg-gray-700">
                 <div className="customized-scrollbar z-20 ml-8 mr-1 flex h-80 flex-row flex-wrap content-start gap-4 overflow-y-auto overflow-x-hidden pr-7 pt-9">
-                  {wrongWords.map((word, index) => (
+                  {wrongWordChips.map((word, index) => (
                     <WordChip key={`${index}-${word.name}`} word={word} />
                   ))}
                 </div>
                 <div className="align-center flex w-full flex-row justify-start rounded-b-xl bg-indigo-200 px-4 dark:bg-indigo-400">
-                  <ConclusionBar mistakeLevel={mistakeLevel} mistakeCount={wrongWords.length} />
+                  <ConclusionBar mistakeLevel={mistakeLevel} mistakeCount={wrongWordChips.length} />
                 </div>
               </div>
               <div className="ml-2 flex flex-col items-center justify-end gap-3 text-xl">

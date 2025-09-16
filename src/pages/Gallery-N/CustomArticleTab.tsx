@@ -1,5 +1,5 @@
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { read as readDocx } from 'mammoth'
+import * as mammoth from 'mammoth'
 import { marked } from 'marked'
 import * as pdfjsLib from 'pdfjs-dist'
 import type { ChangeEvent, DragEvent } from 'react'
@@ -26,25 +26,47 @@ export function CustomArticleTab({ onSave, onCancel }: CustomArticleTabProps) {
   const [chapters, setChapters] = useState<Chapter[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const scrollChapterListToBottom = () => {
+    setTimeout(() => {
+      const container = document.querySelector('.chapter-list-container') as HTMLElement | null
+      if (container) container.scrollTop = container.scrollHeight
+    }, 50)
+  }
+
   const processTextFile = async (file: File) => {
     const text = await file.text()
     setArticleContent(text)
     if (!articleTitle) {
       setArticleTitle(file.name.replace(/\.(txt|md|markdown)$/i, ''))
     }
-    // 自动按换行和空行分节符划分章节
-    autoSplitChapters(text)
+    // 一个文件对应一个章节
+    setChapters((prev) => {
+      const next = [...prev, { content: text }]
+      return next
+    })
+    scrollChapterListToBottom()
   }
 
   const processWordFile = async (file: File) => {
     const arrayBuffer = await file.arrayBuffer()
-    const result = await readDocx({ arrayBuffer })
-    setArticleContent(result.value)
+    let text = ''
+    try {
+      const result = await mammoth.extractRawText({ arrayBuffer })
+      text = result.value || ''
+    } catch (e) {
+      console.error('读取 Word 文件失败', e)
+      text = ''
+    }
+    setArticleContent(text)
     if (!articleTitle) {
       setArticleTitle(file.name.replace(/\.(doc|docx)$/i, ''))
     }
-    // 自动按换行和空行分节符划分章节
-    autoSplitChapters(result.value)
+    // 一个文件对应一个章节
+    setChapters((prev) => {
+      const next = [...prev, { content: text }]
+      return next
+    })
+    scrollChapterListToBottom()
   }
 
   const processPdfFile = async (file: File) => {
@@ -63,8 +85,12 @@ export function CustomArticleTab({ onSave, onCancel }: CustomArticleTabProps) {
     if (!articleTitle) {
       setArticleTitle(file.name.replace(/\.pdf$/i, ''))
     }
-    // 自动按换行和空行分节符划分章节
-    autoSplitChapters(fullText)
+    // 一个文件对应一个章节
+    setChapters((prev) => {
+      const next = [...prev, { content: fullText }]
+      return next
+    })
+    scrollChapterListToBottom()
   }
 
   const processMarkdownFile = async (file: File) => {
@@ -73,13 +99,17 @@ export function CustomArticleTab({ onSave, onCancel }: CustomArticleTabProps) {
     // 将HTML转换为纯文本
     const tempDiv = document.createElement('div')
     tempDiv.innerHTML = html as string
-    const plainText = tempDiv.textContent || tempDiv.innerText || ''
+    const plainText = (tempDiv.textContent || tempDiv.innerText || '') as string
     setArticleContent(plainText)
     if (!articleTitle) {
       setArticleTitle(file.name.replace(/\.(md|markdown)$/i, ''))
     }
-    // 自动按换行和空行分节符划分章节
-    autoSplitChapters(plainText)
+    // 一个文件对应一个章节
+    setChapters((prev) => {
+      const next = [...prev, { content: plainText }]
+      return next
+    })
+    scrollChapterListToBottom()
   }
 
   const processFile = async (file: File) => {
@@ -100,6 +130,8 @@ export function CustomArticleTab({ onSave, onCancel }: CustomArticleTabProps) {
     const file = event.target.files?.[0]
     if (file) {
       await processFile(file)
+      // 重置 input 值，避免选择相同文件时不触发 onChange
+      event.target.value = ''
     }
   }
 
@@ -125,39 +157,12 @@ export function CustomArticleTab({ onSave, onCancel }: CustomArticleTabProps) {
     event.preventDefault()
   }
 
-  // 自动按换行和空行分节符划分章节
-  const autoSplitChapters = (text: string) => {
-    // 优先按双换行符（空行）分割文本
-    const sectionsByEmptyLine = text.split(/\n\s*\n/).filter((section) => section.trim())
-
-    if (sectionsByEmptyLine.length > 1) {
-      // 按空行分割的章节，确保过滤掉空内容
-      const newChapters: Chapter[] = sectionsByEmptyLine
-        .map((section) => section.trim())
-        .filter((content) => content.length > 0)
-        .map((content) => ({ content }))
-
-      setChapters(newChapters)
-    } else {
-      // 如果没有空行，则按单换行符分割，每行作为一个章节
-      const lines = text.split('\n').filter((line) => line.trim())
-      const newChapters: Chapter[] = lines.map((line) => ({
-        content: line.trim(),
-      }))
-
-      setChapters(newChapters)
-    }
-  }
+  // 取消自动分节：一个文件仅对应一个章节
 
   const handleAddChapter = () => {
-    setChapters([...chapters, { content: '' }])
-    // 延迟滚动到最后一个章节，确保DOM已更新
-    setTimeout(() => {
-      const chapterListContainer = document.querySelector('.chapter-list-container')
-      if (chapterListContainer) {
-        chapterListContainer.scrollTop = chapterListContainer.scrollHeight
-      }
-    }, 100)
+    // 点击“添加章节”新增一个空白文本章节
+    setChapters((prev) => [...prev, { content: '' }])
+    scrollChapterListToBottom()
   }
 
   const handleRemoveChapter = (index: number) => {
@@ -239,13 +244,6 @@ export function CustomArticleTab({ onSave, onCancel }: CustomArticleTabProps) {
           >
             点击上传
           </button>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept=".txt,.doc,.docx,.pdf,.md,.markdown"
-            className="hidden"
-          />
         </div>
       )}
 
@@ -254,61 +252,63 @@ export function CustomArticleTab({ onSave, onCancel }: CustomArticleTabProps) {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">文章预览</label>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => {
-                  setChapters([])
-                  setArticleContent('')
-                  setArticleTitle('')
-                  setArticleDescription('')
-                }}
-                className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              >
-                重新上传
-              </button>
+          </div>
+          <div className="chapter-list-container rounded-md p-2 dark:bg-gray-700 scrollbar-hide" style={{ height: '12rem', overflowY: 'auto' }}>
+            <div className="space-y-4">
+              {chapters.map((chapter, index) => (
+                <div
+                  key={index}
+                  className="relative rounded-md border border-gray-200 bg-white/80 p-3 transition-colors hover:border-indigo-300 focus-within:border-indigo-500 dark:border-gray-600 dark:bg-gray-800/60"
+                >
+                  <div className="mb-2 flex items-center justify-between pr-7">
+                    <span className="rounded bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700 dark:bg-gray-700 dark:text-gray-200">
+                      第 {index + 1} 章
+                    </span>
+                    <button
+                      onClick={() => handleRemoveChapter(index)}
+                      className="text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
+                      title="删除该章节"
+                    >
+                      <IconMinusCircle className="h-5 w-5" />
+                    </button>
+                  </div>
+                  <textarea
+                    placeholder="请输入章节内容"
+                    value={chapter.content}
+                    onChange={(e) => handleChapterChange(index, e.target.value)}
+                    rows={Math.max(4, Math.ceil((chapter.content || '').length / 60))}
+                    className="scrollbar-hide w-full resize-y rounded-md border-none bg-transparent pr-2 text-sm focus:outline-none focus:ring-0 dark:bg-transparent dark:text-white dark:placeholder-gray-400"
+                    style={{ minHeight: '6rem' }}
+                  />
+                </div>
+              ))}
             </div>
           </div>
-          <ScrollArea
-            className="chapter-list-container rounded-md border border-gray-300 p-2 dark:border-gray-600 dark:bg-gray-700"
-            style={{
-              maxHeight: '12rem',
-              height: chapters.length > 2 ? '12rem' : 'auto',
-            }}
-          >
-              <div className="space-y-4">
-                {chapters.map((chapter, index) => (
-                  <div key={index} className="relative">
-                    <div className="mb-2 flex items-center justify-end">
-                      <button
-                        onClick={() => handleRemoveChapter(index)}
-                        className="flex-shrink-0 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
-                      >
-                        <IconMinusCircle className="h-5 w-5" />
-                      </button>
-                    </div>
-                    <textarea
-                      placeholder="请输入章节内容"
-                      value={chapter.content}
-                      onChange={(e) => handleChapterChange(index, e.target.value)}
-                      rows={chapter.content ? Math.max(2, Math.ceil(chapter.content.length / 50)) : 2}
-                      className="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
-                      style={{ minHeight: chapter.content ? '4rem' : '2.5rem' }}
-                    />
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
         </div>
       )}
 
-      <div>
+      <div className="mt-2 flex items-center gap-4">
         <button
           onClick={handleAddChapter}
-          className="text-sm text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+          className="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-300 dark:hover:text-indigo-200"
         >
           + 添加章节
         </button>
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-300 dark:hover:text-indigo-200"
+        >
+          + 添加文件
+        </button>
       </div>
+
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept=".txt,.doc,.docx,.pdf,.md,.markdown"
+        className="hidden"
+      />
 
       <div className="flex justify-end space-x-3">
         <button

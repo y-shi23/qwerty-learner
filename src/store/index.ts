@@ -83,6 +83,8 @@ export const isTextSelectableAtom = atomWithStorage('isTextSelectable', false)
 
 export const punctuationConfigAtom = atomForConfig('punctuationConfig', {
   isHidePunctuation: false,
+  // 新增：文章练习时跳过空格
+  isSkipSpace: false,
 })
 
 export const reviewModeInfoAtom = reviewInfoAtom({

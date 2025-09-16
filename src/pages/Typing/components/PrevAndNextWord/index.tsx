@@ -2,7 +2,7 @@ import { TypingContext, TypingStateActionType } from '../../store'
 import Tooltip from '@/components/Tooltip'
 import { currentChapterAtom, currentDictInfoAtom, wordDictationConfigAtom } from '@/store'
 import { CTRL } from '@/utils'
-import { useAtomValue } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import { useCallback, useContext, useMemo } from 'react'
 import IconPrev from '~icons/tabler/arrow-narrow-left'
 import IconNext from '~icons/tabler/arrow-narrow-right'
@@ -13,7 +13,7 @@ export default function PrevAndNextWord({ type }: LastAndNextWordProps) {
 
   const wordDictationConfig = useAtomValue(wordDictationConfigAtom)
   const currentDictInfo = useAtomValue(currentDictInfoAtom)
-  const currentChapter = useAtomValue(currentChapterAtom)
+  const [currentChapter, setCurrentChapter] = useAtom(currentChapterAtom)
   const newIndex = useMemo(() => state.chapterData.index + (type === 'prev' ? -1 : 1), [state.chapterData.index, type])
   const word = state.chapterData.words[newIndex]
   const shortCutKey = useMemo(() => (type === 'prev' ? `${CTRL} + Shift + ArrowLeft` : `${CTRL} + Shift + ArrowRight`), [type])
@@ -37,7 +37,14 @@ export default function PrevAndNextWord({ type }: LastAndNextWordProps) {
 
   const onClickWord = useCallback(() => {
     if (isArticleMode) {
-      // 文章模式：章节切换由父组件的快捷键处理，这里不做处理
+      // 文章模式：点击切换章节（与快捷键一致）
+      if (type === 'prev' && currentChapter > 0) {
+        setCurrentChapter(currentChapter - 1)
+        dispatch({ type: TypingStateActionType.SETUP_CHAPTER, payload: { words: [], shouldShuffle: false } })
+      } else if (type === 'next' && currentChapter < currentDictInfo.chapterCount - 1) {
+        setCurrentChapter(currentChapter + 1)
+        dispatch({ type: TypingStateActionType.SETUP_CHAPTER, payload: { words: [], shouldShuffle: false } })
+      }
       return
     }
 
@@ -45,7 +52,16 @@ export default function PrevAndNextWord({ type }: LastAndNextWordProps) {
 
     if (type === 'prev') dispatch({ type: TypingStateActionType.SKIP_2_WORD_INDEX, newIndex })
     if (type === 'next') dispatch({ type: TypingStateActionType.SKIP_2_WORD_INDEX, newIndex })
-  }, [type, dispatch, newIndex, word, isArticleMode])
+  }, [
+    type,
+    dispatch,
+    newIndex,
+    word,
+    isArticleMode,
+    currentChapter,
+    setCurrentChapter,
+    currentDictInfo.chapterCount,
+  ])
 
   const headWord = useMemo(() => {
     if (isArticleMode) {

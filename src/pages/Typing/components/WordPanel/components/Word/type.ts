@@ -20,6 +20,8 @@ export type WordState = {
   letterMistake: LetterMistakes
   // 用于随机隐藏字母功能
   randomLetterVisible: boolean[]
+  // 本次输入过程中自动跳过的空格数量（用于屏蔽声音与计数）
+  autoSkipSpaces: number
 }
 
 export const initialWordState: WordState = {
@@ -37,4 +39,5 @@ export const initialWordState: WordState = {
   letterTimeArray: [],
   letterMistake: {},
   randomLetterVisible: [],
+  autoSkipSpaces: 0,
 }
